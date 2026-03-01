@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+}
+
+@layer base {
+  :root {
+    --background: #f8fafc;
+    --surface: #ffffff;
+    --primary: #3b82f6;
+    /* Blue */
+    --secondary: #8b5cf6;
+    /* Purple */
+    --accent: #10b981;
+    /* Green */
+    --text: #0f172a;
+    --muted: #64748b;
+  }
+
+  .dark {
+    --background: #020617;
+    /* Very deep blue/black */
+    --surface: #0f172a;
+    /* Lighter slate for cards */
+    --primary: #60a5fa;
+    /* Neon Blue */
+    --secondary: #a78bfa;
+    /* Neon Purple */
+    --accent: #34d399;
+    /* Neon Green */
+    --text: #f8fafc;
+    --muted: #94a3b8;
+  }
+}
+
+body {
+  background-color: var(--background);
+  color: var(--text);
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Glassmorphism utility */
+.glass {
+  background-color: color-mix(in srgb, var(--surface) 50%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+.dark .glass {
+  background-color: color-mix(in srgb, var(--surface) 40%, transparent);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Custom Scrollbar for dark mode */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--surface);
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
