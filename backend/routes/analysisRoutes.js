@@ -119,11 +119,15 @@ const mergeAndNormalize = (tagArrays) => {
 // @access  Private
 router.get('/topics', protect, async (req, res) => {
     try {
-        const { id, platforms } = req.user;
-        const cacheKey = `analysis_topics_${id}`;
+        const userId = req.user._id;           // Mongoose uses _id
+        const platforms = req.user.platforms;   // access directly, not via destructure
+
+        console.log('[Analysis] platforms:', JSON.stringify(platforms));
+
+        const cacheKey = `analysis_topics_${userId}`;
         const cached = analysisCache.get(cacheKey);
         if (cached) {
-            console.log('Serving topic analysis from cache...');
+            console.log('[Analysis] Serving from cache');
             return res.json(cached);
         }
 
@@ -131,32 +135,36 @@ router.get('/topics', protect, async (req, res) => {
         const tagSources = [];
         const sources = [];
 
-        if (platforms?.leetcode) {
-            const lcHandle = extractUsername(platforms.leetcode);
-            if (lcHandle) {
-                promises.push(
-                    getLeetcodeData(lcHandle).then(data => {
-                        if (!data.error && data.topicTags?.length > 0) {
-                            tagSources.push({ tags: data.topicTags, platform: 'LeetCode' });
-                            sources.push('LeetCode');
-                        }
-                    }).catch(() => { })
-                );
-            }
+        const lcRaw = platforms?.leetcode;
+        const cfRaw = platforms?.codeforces;
+        const lcHandle = extractUsername(lcRaw);
+        const cfHandle = extractUsername(cfRaw);
+
+        console.log('[Analysis] LC raw:', lcRaw, '→ handle:', lcHandle);
+        console.log('[Analysis] CF raw:', cfRaw, '→ handle:', cfHandle);
+
+        if (lcHandle) {
+            promises.push(
+                getLeetcodeData(lcHandle).then(data => {
+                    console.log('[Analysis] LC tags count:', data.topicTags?.length, 'error:', data.error);
+                    if (!data.error && data.topicTags?.length > 0) {
+                        tagSources.push({ tags: data.topicTags, platform: 'LeetCode' });
+                        sources.push('LeetCode');
+                    }
+                }).catch(e => console.error('[Analysis] LC fetch error:', e.message))
+            );
         }
 
-        if (platforms?.codeforces) {
-            const cfHandle = extractUsername(platforms.codeforces);
-            if (cfHandle) {
-                promises.push(
-                    getCodeforcesData(cfHandle).then(data => {
-                        if (!data.error && data.topicTags?.length > 0) {
-                            tagSources.push({ tags: data.topicTags, platform: 'Codeforces' });
-                            sources.push('Codeforces');
-                        }
-                    }).catch(() => { })
-                );
-            }
+        if (cfHandle) {
+            promises.push(
+                getCodeforcesData(cfHandle).then(data => {
+                    console.log('[Analysis] CF tags count:', data.topicTags?.length, 'error:', data.error);
+                    if (!data.error && data.topicTags?.length > 0) {
+                        tagSources.push({ tags: data.topicTags, platform: 'Codeforces' });
+                        sources.push('Codeforces');
+                    }
+                }).catch(e => console.error('[Analysis] CF fetch error:', e.message))
+            );
         }
 
         await Promise.all(promises);
