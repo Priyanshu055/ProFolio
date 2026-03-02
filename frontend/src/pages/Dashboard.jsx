@@ -290,8 +290,19 @@ const Dashboard = () => {
                         <Target className="w-6 h-6 text-primary" /> Weakness Analysis
                     </h2>
                     <div className="glass rounded-2xl p-6">
-                        <WeaknessAnalysis data={mockRadarData} />
+                        {topicLoading ? (
+                            <div className="min-h-[200px] flex flex-col items-center justify-center gap-3 text-muted">
+                                <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                                <p className="text-sm">Analyzing topics...</p>
+                            </div>
+                        ) : (
+                            <WeaknessAnalysis
+                                topics={topicData?.topics}
+                                sources={topicData?.sources}
+                            />
+                        )}
                     </div>
+
                 </motion.div>
 
                 <motion.div
