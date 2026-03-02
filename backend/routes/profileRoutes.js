@@ -51,11 +51,11 @@ const extractUsername = (url) => {
 // @access  Private
 router.get('/', protect, async (req, res) => {
     try {
-        const { id } = req.user;
+        const userId = req.user._id;
         const { platforms } = req.user;
 
         // Check if we already have this user's profile aggregated in the cache
-        const cacheKey = `user_profiles_${id}`;
+        const cacheKey = `user_profiles_${userId}`;
         const cachedProfiles = profileCache.get(cacheKey);
 
         if (cachedProfiles) {

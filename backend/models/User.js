@@ -54,6 +54,9 @@ const userSchema = mongoose.Schema(
             github: { type: String, default: '' },
             codechef: { type: String, default: '' },
             geeksforgeeks: { type: String, default: '' },
+            hackerrank: { type: String, default: '' },
+            hackerearth: { type: String, default: '' },
+            atcoder: { type: String, default: '' },
         },
     },
     {
