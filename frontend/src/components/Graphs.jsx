@@ -20,22 +20,23 @@ export const GitHubHeatmap = ({ contributions, username }) => {
 
     if (!contributions || contributions.length === 0) {
         return (
-            <div className="h-40 flex items-center justify-center text-muted text-sm bg-surface/30 rounded-xl border border-white/5">
-                No contribution data available
+            <div className="h-40 flex flex-col items-center justify-center gap-2 text-muted text-sm bg-surface/30 rounded-xl border border-white/5">
+                <span className="text-2xl">📊</span>
+                <p>No contribution data available</p>
+                <p className="text-xs opacity-60">Make sure your GitHub username is saved in Settings</p>
             </div>
         );
     }
 
-    // Build 52-week grid (7 rows × 52 cols)
-    // Pad start so week starts on Sunday
-    const firstDay = new Date(contributions[0].date).getDay(); // 0=Sun
+    // Build 53-week grid (pad start to align to Sunday)
+    const firstDay = new Date(contributions[0].date).getDay();
     const paddedDays = [...Array(firstDay).fill(null), ...contributions];
     const weeks = [];
     for (let i = 0; i < paddedDays.length; i += 7) {
         weeks.push(paddedDays.slice(i, i + 7));
     }
 
-    // Figure out which column each month label starts on
+    // Month label positions
     const monthLabels = [];
     let lastMonth = -1;
     weeks.forEach((week, wi) => {
@@ -50,72 +51,100 @@ export const GitHubHeatmap = ({ contributions, username }) => {
     });
 
     const totalContributions = contributions.reduce((s, d) => s + d.count, 0);
+    const activeDays = contributions.filter(d => d.count > 0).length;
+    const maxDay = Math.max(...contributions.map(d => d.count));
 
     return (
-        <div className="w-full">
-            <div className="flex items-center justify-between mb-3">
-                <span className="text-xs text-muted">{totalContributions.toLocaleString()} contributions in the last year</span>
-                <div className="flex items-center gap-1.5 text-xs text-muted">
-                    Less
-                    {LEVEL_COLORS.map((c, i) => <div key={i} className={`w-3 h-3 rounded-sm ${c} border border-white/5`} />)}
-                    More
+        <div className="w-full space-y-4">
+            {/* Prominent stats row */}
+            <div className="flex flex-wrap items-center gap-4">
+                <div className="flex flex-col">
+                    <span className="text-3xl font-bold text-green-400">{totalContributions.toLocaleString()}</span>
+                    <span className="text-xs text-muted">total contributions this year</span>
+                </div>
+                <div className="h-8 w-px bg-white/10 hidden sm:block" />
+                <div className="flex flex-col">
+                    <span className="text-lg font-semibold">{activeDays}</span>
+                    <span className="text-xs text-muted">active days</span>
+                </div>
+                <div className="h-8 w-px bg-white/10 hidden sm:block" />
+                <div className="flex flex-col">
+                    <span className="text-lg font-semibold">{maxDay}</span>
+                    <span className="text-xs text-muted">best single day</span>
                 </div>
             </div>
 
-            <div className="overflow-x-auto">
-                <div className="inline-flex gap-0 relative" style={{ minWidth: `${weeks.length * 14}px` }}>
-                    {/* Day labels column */}
-                    <div className="flex flex-col gap-px mr-1 mt-5">
+            {/* Heatmap grid — fills full width */}
+            <div className="w-full">
+                {/* Month labels row */}
+                <div className="flex mb-1 ml-7">
+                    {weeks.map((_, wi) => {
+                        const label = monthLabels.find(m => m.col === wi);
+                        return (
+                            <div
+                                key={wi}
+                                className="text-[9px] text-muted overflow-visible whitespace-nowrap"
+                                style={{ flex: '1 0 0', minWidth: 0 }}
+                            >
+                                {label ? label.label : ''}
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* Day labels + grid */}
+                <div className="flex gap-0.5">
+                    {/* Day-of-week labels */}
+                    <div className="flex flex-col justify-around mr-1 shrink-0" style={{ width: '24px' }}>
                         {DAY_LABELS.map((d, i) => (
-                            <div key={i} style={{ height: '11px', lineHeight: '11px' }} className="text-[9px] text-muted pr-1 text-right w-6">{d}</div>
+                            <div key={i} className="text-[9px] text-muted text-right leading-none">{d}</div>
                         ))}
                     </div>
 
-                    <div className="flex-1">
-                        {/* Month labels */}
-                        <div className="flex mb-1" style={{ gap: 0 }}>
-                            {weeks.map((_, wi) => {
-                                const label = monthLabels.find(m => m.col === wi);
-                                return (
-                                    <div key={wi} style={{ width: '13px', flexShrink: 0 }} className="text-[9px] text-muted overflow-visible whitespace-nowrap">
-                                        {label ? label.label : ''}
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        {/* Grid */}
-                        <div className="flex gap-px">
-                            {weeks.map((week, wi) => (
-                                <div key={wi} className="flex flex-col gap-px">
-                                    {Array.from({ length: 7 }, (_, di) => {
-                                        const day = week[di] ?? null;
-                                        return (
-                                            <div
-                                                key={di}
-                                                className={`w-2.5 h-2.5 rounded-sm border border-white/5 cursor-default transition-transform hover:scale-125 ${day ? LEVEL_COLORS[day.level ?? 0] : 'bg-transparent border-transparent'}`}
-                                                onMouseEnter={() => day && setTooltip({ date: day.date, count: day.count })}
-                                                onMouseLeave={() => setTooltip(null)}
-                                            />
-                                        );
-                                    })}
-                                </div>
-                            ))}
-                        </div>
+                    {/* Week columns — flex-1 so they stretch to fill */}
+                    <div className="flex flex-1 gap-px">
+                        {weeks.map((week, wi) => (
+                            <div key={wi} className="flex flex-col gap-px flex-1">
+                                {Array.from({ length: 7 }, (_, di) => {
+                                    const day = week[di] ?? null;
+                                    return (
+                                        <div
+                                            key={di}
+                                            className={`rounded-[2px] border border-white/5 cursor-default transition-transform hover:scale-110 hover:border-green-400/40 ${day ? LEVEL_COLORS[Math.min(day.level ?? 0, 4)] : 'bg-transparent border-transparent'
+                                                }`}
+                                            style={{ aspectRatio: '1', minWidth: '8px' }}
+                                            onMouseEnter={() => day && setTooltip({ date: day.date, count: day.count })}
+                                            onMouseLeave={() => setTooltip(null)}
+                                        />
+                                    );
+                                })}
+                            </div>
+                        ))}
                     </div>
+                </div>
+
+                {/* Legend */}
+                <div className="flex items-center justify-end gap-1.5 mt-2 text-[10px] text-muted">
+                    Less
+                    {LEVEL_COLORS.map((c, i) => (
+                        <div key={i} className={`w-2.5 h-2.5 rounded-sm ${c} border border-white/5`} />
+                    ))}
+                    More
                 </div>
             </div>
 
             {/* Hover tooltip */}
             {tooltip && (
-                <div className="mt-2 text-xs text-center text-muted bg-surface/60 border border-white/10 rounded-lg py-1 px-3 inline-block">
-                    <span className="text-green-400 font-semibold">{tooltip.count}</span> contribution{tooltip.count !== 1 ? 's' : ''} on{' '}
-                    {new Date(tooltip.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                <div className="text-xs text-muted bg-surface/80 border border-white/10 rounded-lg py-1.5 px-3 inline-block">
+                    <span className="text-green-400 font-bold">{tooltip.count}</span>
+                    {' '}contribution{tooltip.count !== 1 ? 's' : ''} on{' '}
+                    {new Date(tooltip.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
                 </div>
             )}
         </div>
     );
 };
+
 
 
 export const RatingHistoryChart = ({ data }) => {
