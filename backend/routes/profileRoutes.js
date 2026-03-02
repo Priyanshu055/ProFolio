@@ -3,8 +3,8 @@ const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const NodeCache = require('node-cache');
 
-// Cache data for 10 minutes (600 seconds) to prevent slow Dashboard loads
-const profileCache = new NodeCache({ stdTTL: 600 });
+// Cache data for 3 minutes (180 seconds) — balance between freshness and API load
+const profileCache = new NodeCache({ stdTTL: 180 });
 
 const { getLeetcodeData } = require('../services/leetcodeService');
 const { getCodeforcesData } = require('../services/codeforcesService');
@@ -131,6 +131,17 @@ router.get('/', protect, async (req, res) => {
         console.error('Error fetching aggregated profile data', error);
         res.status(500).json({ message: 'Server error fetching profile data' });
     }
+});
+
+// @desc    Force-clear this user's cached profile data (manual refresh)
+// @route   POST /api/profiles/refresh
+// @access  Private
+router.post('/refresh', protect, (req, res) => {
+    const userId = req.user._id;
+    const profileKey = `user_profiles_${userId}`;
+    profileCache.del(profileKey);
+    console.log(`[Cache] Cleared profile cache for user ${userId}`);
+    res.json({ message: 'Cache cleared. Dashboard will reload fresh data.' });
 });
 
 module.exports = router;

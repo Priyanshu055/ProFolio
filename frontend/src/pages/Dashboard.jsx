@@ -132,40 +132,48 @@ const Dashboard = () => {
     const { user } = useAuth();
     const [profileData, setProfileData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState(null);
     const [topicData, setTopicData] = useState(null);
     const [topicLoading, setTopicLoading] = useState(true);
+    const [lastUpdated, setLastUpdated] = useState(null);
+
+    const fetchAll = async (isRefresh = false) => {
+        const config = { headers: { Authorization: `Bearer ${user.token}` } };
+
+        if (isRefresh) {
+            setRefreshing(true);
+            // Clear server-side cache first so we get fresh data
+            try { await axios.post('/api/profiles/refresh', {}, config); } catch (_) { }
+        }
+
+        const [profileRes, topicRes] = await Promise.allSettled([
+            axios.get('/api/profiles', config),
+            axios.get('/api/analysis/topics', config)
+        ]);
+
+        if (profileRes.status === 'fulfilled') {
+            setProfileData(profileRes.value.data);
+            setError(null);
+        } else {
+            console.error('Dashboard fetch error', profileRes.reason);
+            setError('Failed to load profile data. Please check your settings.');
+        }
+
+        if (topicRes.status === 'fulfilled') {
+            setTopicData(topicRes.value.data);
+        } else {
+            console.error('Topic analysis fetch error', topicRes.reason);
+        }
+
+        setLastUpdated(new Date());
+        setLoading(false);
+        setTopicLoading(false);
+        setRefreshing(false);
+    };
 
     useEffect(() => {
-        const fetchAll = async () => {
-            const config = { headers: { Authorization: `Bearer ${user.token}` } };
-
-            // Fetch profile data and topic analysis in parallel
-            const [profileRes, topicRes] = await Promise.allSettled([
-                axios.get('/api/profiles', config),
-                axios.get('/api/analysis/topics', config)
-            ]);
-
-            if (profileRes.status === 'fulfilled') {
-                setProfileData(profileRes.value.data);
-            } else {
-                console.error('Dashboard fetch error', profileRes.reason);
-                setError('Failed to load profile data. Please check your settings.');
-            }
-
-            if (topicRes.status === 'fulfilled') {
-                setTopicData(topicRes.value.data);
-            } else {
-                console.error('Topic analysis fetch error', topicRes.reason);
-            }
-
-            setLoading(false);
-            setTopicLoading(false);
-        };
-
-        if (user) {
-            fetchAll();
-        }
+        if (user) fetchAll();
     }, [user]);
 
     if (loading) {
@@ -215,6 +223,31 @@ const Dashboard = () => {
 
     return (
         <div className="space-y-8">
+            {/* Dashboard header with Refresh */}
+            <div className="flex items-center justify-between">
+                <div />
+                <div className="flex items-center gap-3">
+                    {lastUpdated && (
+                        <span className="text-xs text-muted hidden sm:block">
+                            Updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                    )}
+                    <button
+                        onClick={() => fetchAll(true)}
+                        disabled={refreshing || loading}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-white/10 bg-surface/50 hover:bg-surface hover:border-primary/40 text-muted hover:text-text transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <svg
+                            className={`w-4 h-4 ${refreshing ? 'animate-spin text-primary' : ''}`}
+                            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                        >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        {refreshing ? 'Refreshing...' : 'Refresh'}
+                    </button>
+                </div>
+            </div>
+
             {/* User Profile Summary */}
             <div className="glass rounded-2xl p-6 flex flex-col md:flex-row items-start gap-6 border border-white/10">
                 {/* Avatar */}
