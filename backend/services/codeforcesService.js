@@ -28,22 +28,37 @@ const getCodeforcesData = async (handle) => {
             console.log('Could not fetch CF rating history', e.message);
         }
 
-        // Fetch Total Solved Problems (Unique)
+        // Fetch Total Solved Problems (Unique) + Tag Analysis
         let totalSolved = 0;
+        let topicTags = [];
         try {
             const statusRes = await axios.get(`${baseUrl}/user.status?handle=${handle}`);
             if (statusRes.data.status === 'OK' && statusRes.data.result) {
                 const uniqueProblems = new Set();
+                const tagMap = {};
+
                 statusRes.data.result.forEach(sub => {
-                    if (sub.verdict === 'OK' && sub.problem && sub.problem.name) {
-                        uniqueProblems.add(sub.problem.name);
+                    if (sub.verdict === 'OK' && sub.problem) {
+                        const key = `${sub.problem.contestId}-${sub.problem.index}`;
+                        if (!uniqueProblems.has(key)) {
+                            uniqueProblems.add(key);
+                            // Count tags for each uniquely solved problem
+                            (sub.problem.tags || []).forEach(tag => {
+                                tagMap[tag] = (tagMap[tag] || 0) + 1;
+                            });
+                        }
                     }
                 });
+
                 totalSolved = uniqueProblems.size;
+                topicTags = Object.entries(tagMap)
+                    .map(([tag, solved]) => ({ tag, solved }))
+                    .filter(t => t.solved > 0)
+                    .sort((a, b) => b.solved - a.solved);
             }
         } catch (e) {
             console.log('Could not fetch CF solved problems', e.message);
-            totalSolved = 'N/A'; // Provide default if API fails
+            totalSolved = 'N/A';
         }
 
         return {
@@ -54,7 +69,8 @@ const getCodeforcesData = async (handle) => {
             maxRank: userData.maxRank || 'Unrated',
             contribution: userData.contribution || 0,
             totalSolved: totalSolved,
-            ratingHistory: ratingHistory
+            ratingHistory: ratingHistory,
+            topicTags: topicTags
         };
 
     } catch (error) {

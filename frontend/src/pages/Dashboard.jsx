@@ -96,25 +96,38 @@ const Dashboard = () => {
     const [profileData, setProfileData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [topicData, setTopicData] = useState(null);
+    const [topicLoading, setTopicLoading] = useState(true);
 
     useEffect(() => {
-        const fetchProfiles = async () => {
-            try {
-                const config = {
-                    headers: { Authorization: `Bearer ${user.token}` },
-                };
-                const { data } = await axios.get('/api/profiles', config);
-                setProfileData(data);
-            } catch (err) {
-                console.error("Dashboard fetch error", err);
+        const fetchAll = async () => {
+            const config = { headers: { Authorization: `Bearer ${user.token}` } };
+
+            // Fetch profile data and topic analysis in parallel
+            const [profileRes, topicRes] = await Promise.allSettled([
+                axios.get('/api/profiles', config),
+                axios.get('/api/analysis/topics', config)
+            ]);
+
+            if (profileRes.status === 'fulfilled') {
+                setProfileData(profileRes.value.data);
+            } else {
+                console.error('Dashboard fetch error', profileRes.reason);
                 setError('Failed to load profile data. Please check your settings.');
-            } finally {
-                setLoading(false);
             }
+
+            if (topicRes.status === 'fulfilled') {
+                setTopicData(topicRes.value.data);
+            } else {
+                console.error('Topic analysis fetch error', topicRes.reason);
+            }
+
+            setLoading(false);
+            setTopicLoading(false);
         };
 
         if (user) {
-            fetchProfiles();
+            fetchAll();
         }
     }, [user]);
 
@@ -150,16 +163,6 @@ const Dashboard = () => {
             </div>
         );
     }
-
-    // Mock Topic data for Weakness Analysis (since platforms don't provide this directly via API easily)
-    const mockRadarData = [
-        { subject: 'Arrays', A: 120, fullMark: 150 },
-        { subject: 'Dynamic Programming', A: 45, fullMark: 150 },
-        { subject: 'Graphs', A: 60, fullMark: 150 },
-        { subject: 'Trees', A: 85, fullMark: 150 },
-        { subject: 'Strings', A: 110, fullMark: 150 },
-        { subject: 'Math', A: 65, fullMark: 150 },
-    ];
 
     const platformsToRender = [];
     if (profileData) {

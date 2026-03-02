@@ -18,6 +18,11 @@ const getLeetcodeData = async (username) => {
             reputation
             starRating
           }
+          tagProblemCounts {
+            advanced { tagName problemsSolved }
+            intermediate { tagName problemsSolved }
+            fundamental { tagName problemsSolved }
+          }
         }
         userContestRanking(username: $username) {
           attendedContestsCount
@@ -71,6 +76,27 @@ const getLeetcodeData = async (username) => {
       });
     }
 
+    // Parse topic tags from all 3 tiers
+    let topicTags = [];
+    const tagCounts = userData.tagProblemCounts;
+    if (tagCounts) {
+      const allTags = [
+        ...(tagCounts.fundamental || []),
+        ...(tagCounts.intermediate || []),
+        ...(tagCounts.advanced || [])
+      ];
+      // Merge duplicates (same tag may appear in multiple tiers)
+      const tagMap = {};
+      allTags.forEach(t => {
+        const key = t.tagName.toLowerCase();
+        tagMap[key] = (tagMap[key] || 0) + t.problemsSolved;
+      });
+      topicTags = Object.entries(tagMap)
+        .map(([tag, solved]) => ({ tag, solved }))
+        .filter(t => t.solved > 0)
+        .sort((a, b) => b.solved - a.solved);
+    }
+
     return {
       username: userData.username,
       totalSolved: totalSolved,
@@ -80,7 +106,8 @@ const getLeetcodeData = async (username) => {
       ranking: userData.profile.ranking,
       contestRating: contestData ? Math.round(contestData.rating) : null,
       attendedContests: contestData ? contestData.attendedContestsCount : 0,
-      ratingHistory: ratingHistory
+      ratingHistory: ratingHistory,
+      topicTags: topicTags
     };
 
   } catch (error) {

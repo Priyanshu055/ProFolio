@@ -35,6 +35,8 @@ app.get('/', (req, res) => {
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/profiles', require('./routes/profileRoutes'));
 app.use('/api/contests', require('./routes/contestRoutes'));
+app.use('/api/analysis', require('./routes/analysisRoutes'));
+
 
 app.use(notFound);
 app.use(errorHandler);
