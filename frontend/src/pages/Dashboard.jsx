@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import StatCard from '../components/StatCard';
 import ContestsWidget from '../components/ContestsWidget';
 import { RatingHistoryChart, LeetCodePieChart, WeaknessAnalysis } from '../components/Graphs';
-import { Code2, Target, Trophy, Flame, AlertCircle, Activity } from 'lucide-react';
+import { Code2, Target, Trophy, Flame, AlertCircle, Activity, GraduationCap, Linkedin, Tag, MapPin, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const PlatformSection = ({ name, data, type, profileUrl }) => {
@@ -176,11 +176,12 @@ const Dashboard = () => {
     return (
         <div className="space-y-8">
             {/* User Profile Summary */}
-            <div className="glass rounded-2xl p-6 flex flex-col md:flex-row items-center gap-6 border border-white/10">
-                <div className="w-24 h-24 rounded-full border-4 border-surface shadow-xl overflow-hidden bg-surface flex-shrink-0">
+            <div className="glass rounded-2xl p-6 flex flex-col md:flex-row items-start gap-6 border border-white/10">
+                {/* Avatar */}
+                <div className="w-24 h-24 rounded-full border-4 border-surface shadow-xl overflow-hidden bg-surface flex-shrink-0 self-center md:self-start">
                     {user?.profilePicture ? (
                         <img
-                            src={user.profilePicture}
+                            src={user.profilePicture.startsWith('http') ? user.profilePicture : `http://localhost:5000${user.profilePicture}`}
                             alt="Profile"
                             className="w-full h-full object-cover"
                         />
@@ -190,21 +191,76 @@ const Dashboard = () => {
                         </div>
                     )}
                 </div>
-                <div className="flex-1 text-center md:text-left">
+
+                {/* Info */}
+                <div className="flex-1 min-w-0 text-center md:text-left">
+                    {/* Name */}
                     <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent inline-block pb-1 capitalize">
-                        {user?.name ? user.name : 'Overview'}
+                        {user?.name || 'Overview'}
                     </h1>
-                    <p className="text-muted mt-1 text-lg">
-                        {user?.education || 'Unified statistics across your connected platforms'}
-                    </p>
+
+                    {/* Bio */}
+                    {user?.bio && (
+                        <p className="text-muted mt-1 text-sm leading-relaxed max-w-xl">{user.bio}</p>
+                    )}
+
+                    {/* Education row */}
+                    {(user?.course || user?.branch || user?.college || user?.graduationYear) && (
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 text-sm text-muted justify-center md:justify-start">
+                            <GraduationCap className="w-4 h-4 text-secondary shrink-0" />
+                            {user?.course && <span className="font-medium text-text">{user.course}</span>}
+                            {user?.branch && <><span className="opacity-40">·</span><span>{user.branch}</span></>}
+                            {user?.college && (
+                                <><span className="opacity-40">·</span>
+                                    <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{user.college}</span></>
+                            )}
+                            {user?.graduationYear && (
+                                <><span className="opacity-40">·</span>
+                                    <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />Class of {user.graduationYear}</span></>
+                            )}
+                        </div>
+                    )}
+
+                    {/* LinkedIn */}
+                    {user?.linkedin && (
+                        <a
+                            href={user.linkedin}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 mt-2 text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                        >
+                            <Linkedin className="w-4 h-4" />
+                            LinkedIn Profile
+                        </a>
+                    )}
+
+                    {/* Skills */}
+                    {user?.skills && user.skills.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3 justify-center md:justify-start">
+                            {user.skills.map(skill => (
+                                <span
+                                    key={skill}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/15 border border-primary/25 text-primary text-xs font-medium"
+                                >
+                                    <Tag className="w-2.5 h-2.5" />{skill}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Fallback if nothing set */}
+                    {!user?.bio && !user?.course && !user?.college && (
+                        <p className="text-muted mt-1">Unified statistics across your connected platforms</p>
+                    )}
                 </div>
 
                 {error && (
-                    <div className="flex items-center gap-2 text-red-400 bg-red-400/10 px-4 py-2 rounded-lg text-sm border border-red-400/20">
+                    <div className="flex items-center gap-2 text-red-400 bg-red-400/10 px-4 py-2 rounded-lg text-sm border border-red-400/20 shrink-0">
                         <AlertCircle className="w-4 h-4 shrink-0" /> {error}
                     </div>
                 )}
             </div>
+
 
             {/* Per-Platform Sections */}
             <div className="space-y-12">

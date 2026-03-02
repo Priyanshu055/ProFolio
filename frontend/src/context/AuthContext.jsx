@@ -7,12 +7,36 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    // On app load: read token from localStorage, then fetch the full profile from API
+    // This ensures the user object is always up-to-date (not stale from localStorage)
     useEffect(() => {
-        const userInfo = localStorage.getItem('userInfo');
-        if (userInfo) {
-            setUser(JSON.parse(userInfo));
-        }
-        setLoading(false);
+        const bootstrap = async () => {
+            const stored = localStorage.getItem('userInfo');
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                // Immediately set what we have so the app doesn't hang
+                setUser(parsed);
+                // Then refresh from the API to get all latest fields
+                if (parsed?.token) {
+                    try {
+                        const { data } = await axios.get('/api/users/profile', {
+                            headers: { Authorization: `Bearer ${parsed.token}` }
+                        });
+                        const freshUser = { ...data, token: parsed.token };
+                        setUser(freshUser);
+                        localStorage.setItem('userInfo', JSON.stringify(freshUser));
+                    } catch (err) {
+                        // Token expired or invalid — log out
+                        if (err.response?.status === 401) {
+                            localStorage.removeItem('userInfo');
+                            setUser(null);
+                        }
+                    }
+                }
+            }
+            setLoading(false);
+        };
+        bootstrap();
     }, []);
 
     const login = async (email, password) => {
@@ -58,3 +82,4 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
+

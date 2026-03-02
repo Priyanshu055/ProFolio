@@ -28,9 +28,15 @@ router.get('/', protect, async (req, res) => {
             const kontestsRes = await axios.get(kontestsUrl, { timeout: 4000 });
             if (kontestsRes.data && kontestsRes.data.length > 0) {
                 const upcoming = kontestsRes.data
-                    .filter(c => new Date(c.start_time) > new Date())
+                    .filter(c => {
+                        const d = new Date(c.start_time);
+                        return !isNaN(d.getTime()) && d > new Date();
+                    })
                     .sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
-                return res.json(upcoming); // Exit early if successful
+                if (upcoming.length > 0) {
+                    contestCache.set(cacheKey, upcoming);
+                    return res.json(upcoming); // Exit early if successful
+                }
             }
         } catch (kontestsError) {
             console.log('Kontests API failed, falling back to manual aggregation...');
@@ -114,21 +120,26 @@ router.get('/', protect, async (req, res) => {
         }
 
         // Parse HackerEarth
+        // NOTE: HackerEarth uses a non-standard date string format that can fail to parse.
+        // We validate each entry individually and skip any with an invalid date.
         if (heRes && heRes.status === 'fulfilled' && heRes.value.data && heRes.value.data.response) {
             const heUpcoming = heRes.value.data.response
-                .filter(c => new Date(c.start_timestamp).getTime() > Date.now())
-                .map(c => {
-                    const startTimeMs = new Date(c.start_timestamp).getTime();
-                    return {
-                        name: c.title,
-                        url: c.url,
-                        start_time: c.start_timestamp,
-                        end_time: c.end_timestamp,
-                        site: 'HackerEarth',
-                        in_24_hours: (startTimeMs - Date.now()) < (24 * 60 * 60 * 1000) ? 'Yes' : 'No',
-                        status: 'BEFORE'
-                    };
-                });
+                .reduce((acc, c) => {
+                    try {
+                        const startTimeMs = new Date(c.start_timestamp).getTime();
+                        if (isNaN(startTimeMs) || startTimeMs <= Date.now()) return acc;
+                        acc.push({
+                            name: c.title,
+                            url: c.url,
+                            start_time: new Date(startTimeMs).toISOString(),
+                            end_time: c.end_timestamp,
+                            site: 'HackerEarth',
+                            in_24_hours: (startTimeMs - Date.now()) < (24 * 60 * 60 * 1000) ? 'Yes' : 'No',
+                            status: 'BEFORE'
+                        });
+                    } catch (_) { /* skip malformed entry */ }
+                    return acc;
+                }, []);
             aggregatedContests = [...aggregatedContests, ...heUpcoming];
         }
 

@@ -20,9 +20,33 @@ const userSchema = mongoose.Schema(
             type: String,
             default: '',
         },
-        education: {
+        bio: {
             type: String,
             default: '',
+        },
+        course: {
+            type: String,
+            default: '',
+        },
+        branch: {
+            type: String,
+            default: '',
+        },
+        college: {
+            type: String,
+            default: '',
+        },
+        graduationYear: {
+            type: String,
+            default: '',
+        },
+        linkedin: {
+            type: String,
+            default: '',
+        },
+        skills: {
+            type: [String],
+            default: [],
         },
         platforms: {
             leetcode: { type: String, default: '' },

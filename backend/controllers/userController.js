@@ -15,6 +15,14 @@ const authUser = async (req, res, next) => {
                 _id: user._id,
                 name: user.name,
                 email: user.email,
+                profilePicture: user.profilePicture,
+                bio: user.bio,
+                course: user.course,
+                branch: user.branch,
+                college: user.college,
+                graduationYear: user.graduationYear,
+                linkedin: user.linkedin,
+                skills: user.skills,
                 platforms: user.platforms,
                 token: generateToken(user._id),
             });
@@ -28,12 +36,48 @@ const authUser = async (req, res, next) => {
     }
 };
 
+
 // @desc    Register a new user
 // @route   POST /api/users
 // @access  Public
 const registerUser = async (req, res, next) => {
     try {
         const { name, email, password } = req.body;
+
+        // --- Server-side email validation ---
+        const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+        const BLOCKED_DOMAINS = ['test.com', 'example.com', 'fake.com', 'mailinator.com', 'guerrillamail.com', 'tempmail.com', 'yopmail.com', 'trashmail.com'];
+        if (!email || !EMAIL_REGEX.test(email)) {
+            res.status(400);
+            return next(new Error('Please enter a valid email address.'));
+        }
+        const emailDomain = email.split('@')[1]?.toLowerCase();
+        if (BLOCKED_DOMAINS.includes(emailDomain)) {
+            res.status(400);
+            return next(new Error(`"${emailDomain}" is not allowed. Please use a real email address.`));
+        }
+
+        // --- Server-side password strength validation ---
+        if (!password || password.length < 8) {
+            res.status(400);
+            return next(new Error('Password must be at least 8 characters long.'));
+        }
+        if (!/[A-Z]/.test(password)) {
+            res.status(400);
+            return next(new Error('Password must contain at least one uppercase letter.'));
+        }
+        if (!/[a-z]/.test(password)) {
+            res.status(400);
+            return next(new Error('Password must contain at least one lowercase letter.'));
+        }
+        if (!/[0-9]/.test(password)) {
+            res.status(400);
+            return next(new Error('Password must contain at least one number.'));
+        }
+        if (!/[^A-Za-z0-9]/.test(password)) {
+            res.status(400);
+            return next(new Error('Password must contain at least one special character (e.g. !@#$%).'));
+        }
 
         const userExists = await User.findOne({ email });
 
@@ -66,6 +110,7 @@ const registerUser = async (req, res, next) => {
     }
 };
 
+
 // @desc    Get user profile (including platforms)
 // @route   GET /api/users/profile
 // @access  Private
@@ -78,6 +123,14 @@ const getUserProfile = async (req, res, next) => {
                 _id: user._id,
                 name: user.name,
                 email: user.email,
+                profilePicture: user.profilePicture,
+                bio: user.bio,
+                course: user.course,
+                branch: user.branch,
+                college: user.college,
+                graduationYear: user.graduationYear,
+                linkedin: user.linkedin,
+                skills: user.skills,
                 platforms: user.platforms,
             });
         } else {
@@ -107,8 +160,20 @@ const updateUserProfile = async (req, res, next) => {
                 user.profilePicture = `/uploads/${req.file.filename}`;
             }
 
-            if (req.body.education !== undefined) {
-                user.education = req.body.education;
+            if (req.body.bio !== undefined) user.bio = req.body.bio;
+            if (req.body.course !== undefined) user.course = req.body.course;
+            if (req.body.branch !== undefined) user.branch = req.body.branch;
+            if (req.body.college !== undefined) user.college = req.body.college;
+            if (req.body.graduationYear !== undefined) user.graduationYear = req.body.graduationYear;
+            if (req.body.linkedin !== undefined) user.linkedin = req.body.linkedin;
+
+            // Skills can arrive as JSON string (multipart/form-data) or array (JSON body)
+            if (req.body.skills !== undefined) {
+                let skills = req.body.skills;
+                if (typeof skills === 'string') {
+                    try { skills = JSON.parse(skills); } catch (_) { skills = skills.split(',').map(s => s.trim()).filter(Boolean); }
+                }
+                if (Array.isArray(skills)) user.skills = skills;
             }
 
             if (req.body.password) {
@@ -116,8 +181,19 @@ const updateUserProfile = async (req, res, next) => {
             }
 
             if (req.body.platforms) {
-                // Merge with existing platforms or an empty object if undefined
-                user.platforms = { ...(user.platforms || {}), ...req.body.platforms };
+                // When sent as multipart/form-data, nested objects arrive as a JSON string.
+                // We safely parse it here to avoid sending a corrupt type to Mongoose.
+                let incomingPlatforms = req.body.platforms;
+                if (typeof incomingPlatforms === 'string') {
+                    try {
+                        incomingPlatforms = JSON.parse(incomingPlatforms);
+                    } catch (_) {
+                        incomingPlatforms = null; // ignore if unparseable
+                    }
+                }
+                if (incomingPlatforms && typeof incomingPlatforms === 'object') {
+                    user.platforms = { ...(user.platforms?.toObject ? user.platforms.toObject() : user.platforms || {}), ...incomingPlatforms };
+                }
             }
 
             const updatedUser = await user.save();
@@ -127,7 +203,13 @@ const updateUserProfile = async (req, res, next) => {
                 name: updatedUser.name,
                 email: updatedUser.email,
                 profilePicture: updatedUser.profilePicture,
-                education: updatedUser.education,
+                bio: updatedUser.bio,
+                course: updatedUser.course,
+                branch: updatedUser.branch,
+                college: updatedUser.college,
+                graduationYear: updatedUser.graduationYear,
+                linkedin: updatedUser.linkedin,
+                skills: updatedUser.skills,
                 platforms: updatedUser.platforms,
                 token: generateToken(updatedUser._id),
             });
@@ -136,6 +218,7 @@ const updateUserProfile = async (req, res, next) => {
             next(new Error('User not found'));
         }
     } catch (error) {
+        console.error('Error updating user profile:', error.message, error.stack);
         res.status(500);
         next(error);
     }
