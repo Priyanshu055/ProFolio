@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import StatCard from '../components/StatCard';
 import ContestsWidget from '../components/ContestsWidget';
-import { RatingHistoryChart, LeetCodePieChart, WeaknessAnalysis } from '../components/Graphs';
+import { RatingHistoryChart, LeetCodePieChart, WeaknessAnalysis, GitHubHeatmap } from '../components/Graphs';
 import { Code2, Target, Trophy, Flame, AlertCircle, Activity, GraduationCap, Linkedin, Tag, MapPin, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -32,64 +32,101 @@ const PlatformSection = ({ name, data, type, profileUrl }) => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Stats / Pie Chart */}
-                <div className="glass rounded-2xl p-6 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-[50px] pointer-events-none" />
-                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <Target className="w-5 h-5 text-primary" /> {type === 'github' ? 'Contributions' : 'Problem Solving'}
-                    </h3>
-                    <div className="text-3xl font-bold mb-6">
-                        {data.totalSolved !== undefined ? data.totalSolved : (data.public_repos !== undefined ? data.public_repos : 0)}
-                        <span className="text-sm font-normal text-muted ml-2">{type === 'github' ? 'Public Repos' : 'Total Solved'}</span>
-                    </div>
-
-                    {type === 'leetcode' && (
-                        <LeetCodePieChart easy={data.easySolved} medium={data.mediumSolved} hard={data.hardSolved} />
-                    )}
-                </div>
-
-                {/* Trajectory */}
-                <div className="glass rounded-2xl p-6 relative overflow-hidden group lg:col-span-2">
-                    <div className="absolute top-0 left-0 w-32 h-32 bg-accent/5 rounded-full blur-[50px] pointer-events-none" />
-                    <div className="flex justify-between items-start mb-6">
-                        <h3 className="text-lg font-semibold flex items-center gap-2">
-                            <Activity className="w-5 h-5 text-accent" /> Past Contest History
+            {/* GitHub — show heatmap full width */}
+            {type === 'github' ? (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Stats card */}
+                    <div className="glass rounded-2xl p-6 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-[50px] pointer-events-none" />
+                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                            <Target className="w-5 h-5 text-primary" /> GitHub Stats
                         </h3>
-                        <div className="text-right">
-                            <div className="text-xs text-muted uppercase tracking-wider mb-1">Highest Rating</div>
-                            <div className="text-2xl font-bold text-accent">{data.maxRating || data.contestRating || 'N/A'}</div>
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-center bg-surface/40 p-3 rounded-xl border border-white/5">
+                                <span className="text-sm text-muted">Public Repos</span>
+                                <span className="font-bold text-lg">{data.public_repos ?? 0}</span>
+                            </div>
+                            <div className="flex justify-between items-center bg-surface/40 p-3 rounded-xl border border-white/5">
+                                <span className="text-sm text-muted">Followers</span>
+                                <span className="font-bold text-lg">{data.followers ?? 0}</span>
+                            </div>
+                            <div className="flex justify-between items-center bg-surface/40 p-3 rounded-xl border border-white/5">
+                                <span className="text-sm text-muted">Following</span>
+                                <span className="font-bold text-lg">{data.following ?? 0}</span>
+                            </div>
                         </div>
                     </div>
 
-                    {data.ratingHistory && data.ratingHistory.length > 0 ? (
-                        <>
-                            <RatingHistoryChart data={data.ratingHistory} />
-                            <div className="mt-6 max-h-48 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                                <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-3 sticky top-0 bg-surface/90 backdrop-blur z-10 py-1">Recent Contests</h4>
-                                {data.ratingHistory.slice().reverse().map((contest, i) => (
-                                    <div key={i} className="flex justify-between items-center bg-surface/40 p-3 rounded-lg text-sm border border-white/5 hover:bg-surface/60 transition-colors">
-                                        <span className="truncate flex-1 pr-4 text-text font-medium">{contest.contestName}</span>
-                                        <div className="flex gap-4 items-center shrink-0">
-                                            <span className={`font-mono text-xs px-2 py-0.5 rounded-full ${contest.change > 0 ? 'bg-green-500/10 text-green-400' : contest.change < 0 ? 'bg-red-500/10 text-red-400' : 'bg-gray-500/10 text-gray-400'}`}>
-                                                {contest.change > 0 ? '+' : ''}{contest.change}
-                                            </span>
-                                            <span className="font-bold w-12 text-right text-accent">{contest.rating}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </>
-                    ) : (
-                        <div className="h-64 flex items-center justify-center text-muted text-sm bg-surface/30 rounded-xl border border-white/5">
-                            No past contest history found.
-                        </div>
-                    )}
+                    {/* Contribution heatmap — spans 2 cols */}
+                    <div className="glass rounded-2xl p-6 relative overflow-hidden lg:col-span-2">
+                        <div className="absolute top-0 left-0 w-32 h-32 bg-green-500/5 rounded-full blur-[50px] pointer-events-none" />
+                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                            <Activity className="w-5 h-5 text-green-400" /> Contribution Activity
+                        </h3>
+                        <GitHubHeatmap contributions={data.contributions} username={data.username} />
+                    </div>
                 </div>
-            </div>
+            ) : (
+                /* All other platforms — existing layout */
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Stats / Pie Chart */}
+                    <div className="glass rounded-2xl p-6 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-[50px] pointer-events-none" />
+                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                            <Target className="w-5 h-5 text-primary" /> Problem Solving
+                        </h3>
+                        <div className="text-3xl font-bold mb-6">
+                            {data.totalSolved !== undefined ? data.totalSolved : 0}
+                            <span className="text-sm font-normal text-muted ml-2">Total Solved</span>
+                        </div>
+                        {type === 'leetcode' && (
+                            <LeetCodePieChart easy={data.easySolved} medium={data.mediumSolved} hard={data.hardSolved} />
+                        )}
+                    </div>
+
+                    {/* Trajectory */}
+                    <div className="glass rounded-2xl p-6 relative overflow-hidden group lg:col-span-2">
+                        <div className="absolute top-0 left-0 w-32 h-32 bg-accent/5 rounded-full blur-[50px] pointer-events-none" />
+                        <div className="flex justify-between items-start mb-6">
+                            <h3 className="text-lg font-semibold flex items-center gap-2">
+                                <Activity className="w-5 h-5 text-accent" /> Past Contest History
+                            </h3>
+                            <div className="text-right">
+                                <div className="text-xs text-muted uppercase tracking-wider mb-1">Highest Rating</div>
+                                <div className="text-2xl font-bold text-accent">{data.maxRating || data.contestRating || 'N/A'}</div>
+                            </div>
+                        </div>
+
+                        {data.ratingHistory && data.ratingHistory.length > 0 ? (
+                            <>
+                                <RatingHistoryChart data={data.ratingHistory} />
+                                <div className="mt-6 max-h-48 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                                    <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-3 sticky top-0 bg-surface/90 backdrop-blur z-10 py-1">Recent Contests</h4>
+                                    {data.ratingHistory.slice().reverse().map((contest, i) => (
+                                        <div key={i} className="flex justify-between items-center bg-surface/40 p-3 rounded-lg text-sm border border-white/5 hover:bg-surface/60 transition-colors">
+                                            <span className="truncate flex-1 pr-4 text-text font-medium">{contest.contestName}</span>
+                                            <div className="flex gap-4 items-center shrink-0">
+                                                <span className={`font-mono text-xs px-2 py-0.5 rounded-full ${contest.change > 0 ? 'bg-green-500/10 text-green-400' : contest.change < 0 ? 'bg-red-500/10 text-red-400' : 'bg-gray-500/10 text-gray-400'}`}>
+                                                    {contest.change > 0 ? '+' : ''}{contest.change}
+                                                </span>
+                                                <span className="font-bold w-12 text-right text-accent">{contest.rating}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        ) : (
+                            <div className="h-64 flex items-center justify-center text-muted text-sm bg-surface/30 rounded-xl border border-white/5">
+                                No past contest history found.
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </motion.div>
     );
 };
+
 
 const Dashboard = () => {
     const { user } = useAuth();
