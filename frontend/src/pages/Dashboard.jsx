@@ -138,12 +138,12 @@ const Dashboard = () => {
     const [topicLoading, setTopicLoading] = useState(true);
     const [lastUpdated, setLastUpdated] = useState(null);
 
-    const fetchAll = async (isRefresh = false) => {
+    const fetchAll = React.useCallback(async (isRefresh = false) => {
+        if (!user?.token) return;
         const config = { headers: { Authorization: `Bearer ${user.token}` } };
 
         if (isRefresh) {
             setRefreshing(true);
-            // Clear server-side cache first so we get fresh data
             try { await axios.post('/api/profiles/refresh', {}, config); } catch (_) { }
         }
 
@@ -157,24 +157,28 @@ const Dashboard = () => {
             setError(null);
         } else {
             console.error('Dashboard fetch error', profileRes.reason);
-            setError('Failed to load profile data. Please check your settings.');
+            if (!profileData) setError('Failed to load profile data. Please check your settings.');
         }
 
         if (topicRes.status === 'fulfilled') {
             setTopicData(topicRes.value.data);
-        } else {
-            console.error('Topic analysis fetch error', topicRes.reason);
         }
 
         setLastUpdated(new Date());
         setLoading(false);
         setTopicLoading(false);
         setRefreshing(false);
-    };
+    }, [user?.token]);
 
     useEffect(() => {
-        if (user) fetchAll();
-    }, [user]);
+        if (!user) return;
+        // Initial fetch
+        fetchAll();
+        // Auto-refresh every 5 minutes (300 000 ms) silently in background
+        const interval = setInterval(() => fetchAll(false), 5 * 60 * 1000);
+        return () => clearInterval(interval); // cleanup on unmount
+    }, [fetchAll]);
+
 
     if (loading) {
         return (
