@@ -122,13 +122,13 @@ const Home = () => {
                     <div className="flex flex-col items-center md:items-end">
                         <span className="text-sm text-muted mb-3">Developed by <span className="text-white/90 font-medium">Priyanshu</span></span>
                         <div className="flex gap-4">
-                            <a href="#" className="p-2 rounded-lg bg-surface hover:bg-white/10 text-muted hover:text-white transition-colors">
+                            <a href="https://github.com/Priyanshu055" target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-surface hover:bg-white/10 text-muted hover:text-white transition-colors">
                                 <Github className="w-5 h-5" />
                             </a>
-                            <a href="#" className="p-2 rounded-lg bg-surface hover:bg-white/10 text-muted hover:text-[#0A66C2] transition-colors">
+                            <a href="https://www.linkedin.com/in/priyanshu005/" target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-surface hover:bg-white/10 text-muted hover:text-[#0A66C2] transition-colors">
                                 <Linkedin className="w-5 h-5" />
                             </a>
-                            <a href="mailto:contact@example.com" className="p-2 rounded-lg bg-surface hover:bg-white/10 text-muted hover:text-accent transition-colors">
+                            <a href="mailto:pm9581543@gmail.com" className="p-2 rounded-lg bg-surface hover:bg-white/10 text-muted hover:text-accent transition-colors">
                                 <Mail className="w-5 h-5" />
                             </a>
                         </div>
