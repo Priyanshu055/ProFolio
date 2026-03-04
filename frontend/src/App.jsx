@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import Home from './pages/Home';
+import Layout from './components/Layout';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();

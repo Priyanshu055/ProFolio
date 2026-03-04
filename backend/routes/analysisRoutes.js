@@ -80,6 +80,14 @@ const TAG_NORMALIZE_MAP = {
     'two-sat': 'Advanced',
     'flows': 'Advanced',
     'fft': 'Advanced',
+    'design': 'Design',
+    'simulation': 'Simulation',
+    'brainteaser': 'Brainteaser',
+    'database': 'Database',
+    'sql': 'Database',
+    'shell': 'Shell',
+    'operating system': 'Operating System',
+    'concurrency': 'Concurrency'
 };
 
 // Extract username from stored URL or plain text
