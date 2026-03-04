@@ -1,0 +1,16 @@
+{
+    "rewrites": [
+        {
+            "source": "/api/(.*)",
+            "destination": "https://profolio-backend-ghkb.onrender.com/api/$1"
+        },
+        {
+            "source": "/uploads/(.*)",
+            "destination": "https://profolio-backend-ghkb.onrender.com/uploads/$1"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
+        }
+    ]
+}
