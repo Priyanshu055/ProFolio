@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import StatCard from '../components/StatCard';
 import ContestsWidget from '../components/ContestsWidget';
 import { RatingHistoryChart, LeetCodePieChart, WeaknessAnalysis, GitHubHeatmap } from '../components/Graphs';
-import { Code2, Target, Trophy, Flame, AlertCircle, Activity, GraduationCap, Linkedin, Tag, MapPin, Calendar } from 'lucide-react';
+import { Code2, Target, Trophy, Flame, AlertCircle, Activity, GraduationCap, Linkedin, Tag, MapPin, Calendar, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const PlatformSection = ({ name, data, type, profileUrl }) => {
@@ -48,6 +48,44 @@ const PlatformSection = ({ name, data, type, profileUrl }) => {
         );
     }
 
+    // Is this a generic/mock platform that just confirms connection (like AtCoder, HackerEarth)?
+    const isGenericLink = data.success && data.totalSolved === undefined && !data.contributions && !data.ratingHistory && data.stars === undefined;
+
+    if (isGenericLink) {
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="mb-8"
+            >
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/40 to-secondary/40 flex items-center justify-center shadow-lg shadow-primary/10">
+                        <Code2 className="w-5 h-5 text-white/80" />
+                    </div>
+                    <div>
+                        <a href={profileUrl || '#'} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors inline-flex items-center gap-2 group cursor-pointer">
+                            <h2 className="text-2xl font-bold capitalize text-text/90">{name}</h2>
+                            <svg className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                        </a>
+                        <p className="text-muted/60 text-sm tracking-wide">@{data.handle || type} • Profile Connected</p>
+                    </div>
+                </div>
+                <div className="glass rounded-2xl p-6 border border-white/5 bg-surface/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div>
+                        <h3 className="text-lg font-semibold mb-1">Profile Linked Successfully</h3>
+                        <p className="text-sm text-muted">We don't have detailed automated stats for this platform yet, but your profile link is safely stored and visible to others.</p>
+                    </div>
+                    <a href={profileUrl || '#'} target="_blank" rel="noopener noreferrer" className="shrink-0 px-4 py-2 rounded-xl bg-primary/20 border border-primary/30 text-primary font-medium hover:bg-primary/30 hover:border-primary/50 transition-colors">
+                        Visit Profile
+                    </a>
+                </div>
+            </motion.div>
+        );
+    }
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -66,7 +104,15 @@ const PlatformSection = ({ name, data, type, profileUrl }) => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                         </svg>
                     </a>
-                    <p className="text-muted text-sm tracking-wide">@{data.handle || data.username || type} • Rank: {data.rank || data.ranking || 'N/A'}</p>
+                    <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-muted text-sm tracking-wide">
+                        <span>@{data.handle || data.username || type}</span>
+                        {(data.rank || data.ranking) && <span>• Rank: {data.rank || data.ranking}</span>}
+                        {data.stars !== undefined && (
+                            <span className="flex items-center gap-1 text-yellow-400 font-bold bg-yellow-400/10 px-2 py-0.5 rounded-md border border-yellow-400/20">
+                                {data.stars} <Star className="w-3.5 h-3.5 fill-current" />
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
 

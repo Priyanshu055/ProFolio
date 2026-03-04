@@ -11,6 +11,7 @@ const { getCodeforcesData } = require('../services/codeforcesService');
 const { getGithubData } = require('../services/githubService');
 const { getCodechefData } = require('../services/codechefService');
 const { getGeeksForGeeksData } = require('../services/gfgService');
+const { getHackerrankData } = require('../services/hackerrankService');
 
 // Mock services for platforms without easy public APIs/scrapers
 // We return a structured format so the frontend doesn't break
@@ -18,10 +19,8 @@ const getMockPlatformData = async (platform, username) => {
     return {
         handle: username,
         platform: platform,
-        totalSolved: 0,
-        rank: 'N/A',
-        maxRating: 'N/A',
-        message: 'Stats API currently unavailable for this platform'
+        success: true,
+        message: 'Profile connected successfully.'
     }
 };
 
@@ -100,9 +99,8 @@ router.get('/', protect, async (req, res) => {
         }
 
         if (platforms.hackerrank) {
-            const hrUsername = extractUsername(platforms.hackerrank);
             promises.push(
-                getMockPlatformData('hackerrank', hrUsername).then(data => { results.hackerrank = data; })
+                getHackerrankData(extractUsername(platforms.hackerrank)).then(data => { results.hackerrank = data; })
             );
         }
 
