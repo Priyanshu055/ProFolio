@@ -23,7 +23,8 @@ export const GitHubHeatmap = ({ contributions, username }) => {
             <div className="h-40 flex flex-col items-center justify-center gap-2 text-muted text-sm bg-surface/30 rounded-xl border border-white/5">
                 <span className="text-2xl">📊</span>
                 <p>No contribution data available</p>
-                <p className="text-xs opacity-60">Make sure your GitHub username is saved in Settings</p>
+                <p className="text-xs opacity-60">Make sure your GitHub username is saved in Settings.</p>
+                <p className="text-[10px] opacity-40 italic mt-1">(Note: Third-party API sync may take up to 24-48 hours)</p>
             </div>
         );
     }
@@ -123,13 +124,18 @@ export const GitHubHeatmap = ({ contributions, username }) => {
                     </div>
                 </div>
 
-                {/* Legend */}
-                <div className="flex items-center justify-end gap-1.5 mt-2 text-[10px] text-muted">
-                    Less
-                    {LEVEL_COLORS.map((c, i) => (
-                        <div key={i} className={`w-2.5 h-2.5 rounded-sm ${c} border border-white/5`} />
-                    ))}
-                    More
+                {/* Legend and Note */}
+                <div className="flex items-center justify-between gap-1.5 mt-2">
+                    <div className="text-[10px] text-muted/60 italic">
+                        * Data mirrored from 3rd-party API. May take up to 24 hours to sync recent commits.
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[10px] text-muted">
+                        Less
+                        {LEVEL_COLORS.map((c, i) => (
+                            <div key={i} className={`w-2.5 h-2.5 rounded-sm ${c} border border-white/5`} />
+                        ))}
+                        More
+                    </div>
                 </div>
             </div>
 
