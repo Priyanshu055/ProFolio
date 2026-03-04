@@ -6,7 +6,8 @@ const generateToken = require('../utils/generateToken');
 // @access  Public
 const authUser = async (req, res, next) => {
     try {
-        const { email, password } = req.body;
+        let { email, password } = req.body;
+        if (email) email = email.toLowerCase();
 
         const user = await User.findOne({ email });
 
@@ -42,7 +43,8 @@ const authUser = async (req, res, next) => {
 // @access  Public
 const registerUser = async (req, res, next) => {
     try {
-        const { name, email, password } = req.body;
+        let { name, email, password } = req.body;
+        if (email) email = email.toLowerCase();
 
         // --- Server-side email validation ---
         const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
@@ -105,6 +107,14 @@ const registerUser = async (req, res, next) => {
             next(new Error('Invalid user data'));
         }
     } catch (error) {
+        if (error.code === 11000) {
+            res.status(400);
+            return next(new Error('User with this email already exists'));
+        }
+        if (error.name === 'ValidationError') {
+            res.status(400);
+            return next(new Error(Object.values(error.errors).map(val => val.message).join(', ')));
+        }
         res.status(500);
         next(error);
     }
@@ -152,7 +162,7 @@ const updateUserProfile = async (req, res, next) => {
 
         if (user) {
             user.name = req.body.name || user.name;
-            user.email = req.body.email || user.email;
+            user.email = (req.body.email || user.email).toLowerCase();
 
             // Handle file upload from Multer
             if (req.file) {

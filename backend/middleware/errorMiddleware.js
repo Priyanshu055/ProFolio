@@ -5,7 +5,13 @@ const notFound = (req, res, next) => {
 };
 
 const errorHandler = (err, req, res, next) => {
+    if (res.headersSent) {
+        return next(err);
+    }
     const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+    console.error(`[Error] ${req.method} ${req.originalUrl}:`, err.message);
+    if (statusCode === 500) console.error(err.stack);
+
     res.status(statusCode);
     res.json({
         message: err.message,
