@@ -8,7 +8,45 @@ import { Code2, Target, Trophy, Flame, AlertCircle, Activity, GraduationCap, Lin
 import { motion } from 'framer-motion';
 
 const PlatformSection = ({ name, data, type, profileUrl }) => {
-    if (!data || data.error) return null;
+    if (!data) return null; // not connected at all — skip
+
+    // API failed — show a graceful unavailable card
+    if (data.error) {
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="mb-8"
+            >
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/40 to-secondary/40 flex items-center justify-center">
+                        <Code2 className="w-5 h-5 text-white/60" />
+                    </div>
+                    <div>
+                        <a href={profileUrl || '#'} target="_blank" rel="noopener noreferrer"
+                            className="hover:text-primary transition-colors inline-flex items-center gap-2 group">
+                            <h2 className="text-2xl font-bold capitalize text-text/70">{name}</h2>
+                            <svg className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                        </a>
+                        <p className="text-muted/60 text-sm">Connected · Stats temporarily unavailable</p>
+                    </div>
+                </div>
+                <div className="glass rounded-2xl p-6 border border-yellow-500/10 bg-yellow-500/5 flex items-start gap-4">
+                    <AlertCircle className="w-5 h-5 text-yellow-400 shrink-0 mt-0.5" />
+                    <div>
+                        <p className="text-sm text-yellow-300 font-medium">Stats temporarily unavailable</p>
+                        <p className="text-xs text-muted mt-1">
+                            The {name} data API is currently down or unreachable. This is common with unofficial APIs.
+                            Your profile is still connected — try clicking <strong>Refresh</strong> later.
+                        </p>
+                    </div>
+                </div>
+            </motion.div>
+        );
+    }
 
     return (
         <motion.div
@@ -213,17 +251,20 @@ const Dashboard = () => {
         );
     }
 
-    const platformsToRender = [];
-    if (profileData) {
-        if (profileData.leetcode && !profileData.leetcode.error) platformsToRender.push({ type: 'leetcode', name: 'LeetCode', data: profileData.leetcode });
-        if (profileData.codeforces && !profileData.codeforces.error) platformsToRender.push({ type: 'codeforces', name: 'Codeforces', data: profileData.codeforces });
-        if (profileData.codechef && !profileData.codechef.error) platformsToRender.push({ type: 'codechef', name: 'CodeChef', data: profileData.codechef });
-        if (profileData.geeksforgeeks && !profileData.geeksforgeeks.error) platformsToRender.push({ type: 'gfg', name: 'GeeksForGeeks', data: profileData.geeksforgeeks });
-        if (profileData.github && !profileData.github.error) platformsToRender.push({ type: 'github', name: 'GitHub', data: profileData.github });
-        if (profileData.hackerrank && !profileData.hackerrank.error) platformsToRender.push({ type: 'hackerrank', name: 'HackerRank', data: profileData.hackerrank });
-        if (profileData.hackerearth && !profileData.hackerearth.error) platformsToRender.push({ type: 'hackerearth', name: 'HackerEarth', data: profileData.hackerearth });
-        if (profileData.atcoder && !profileData.atcoder.error) platformsToRender.push({ type: 'atcoder', name: 'AtCoder', data: profileData.atcoder });
-    }
+    const PLATFORM_META = [
+        { key: 'leetcode', type: 'leetcode', name: 'LeetCode' },
+        { key: 'codeforces', type: 'codeforces', name: 'Codeforces' },
+        { key: 'codechef', type: 'codechef', name: 'CodeChef' },
+        { key: 'geeksforgeeks', type: 'gfg', name: 'GeeksForGeeks' },
+        { key: 'github', type: 'github', name: 'GitHub' },
+        { key: 'hackerrank', type: 'hackerrank', name: 'HackerRank' },
+        { key: 'hackerearth', type: 'hackerearth', name: 'HackerEarth' },
+        { key: 'atcoder', type: 'atcoder', name: 'AtCoder' },
+    ];
+
+    const platformsToRender = PLATFORM_META
+        .filter(p => profileData?.[p.key])   // only show actually-fetched platforms
+        .map(p => ({ ...p, data: profileData[p.key] }));
 
     return (
         <div className="space-y-8">
